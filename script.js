@@ -4,8 +4,13 @@ const FREQUENCIES = [250, 500, 1000, 2000, 3000, 4000, 6000, 8000];
 const thresholds = {};
 const $ = (id) => document.getElementById(id);
 
+// ---------------------------------------------
+// INICIALIZACIÓN
+// ---------------------------------------------
+
 function initTable() {
   const tbody = $("thresholdRows");
+
   if (!tbody) {
     console.error('No se encontró el elemento "thresholdRows" en index.html.');
     return;
@@ -20,21 +25,29 @@ function initTable() {
     };
 
     const tr = document.createElement("tr");
+
     tr.innerHTML = `
-      <td>${hz >= 1000 ? hz / 1000 + " kHz" : hz + " Hz"}</td>
+      <td>${formatFrequency(hz)}</td>
       ${makeInput(hz, "right", "air")}
       ${makeInput(hz, "right", "bone")}
       ${makeInput(hz, "left", "air")}
       ${makeInput(hz, "left", "bone")}
     `;
+
     tbody.appendChild(tr);
   });
 
   tbody.querySelectorAll("input.threshold").forEach((input) => {
     input.addEventListener("input", (event) => {
       const { hz, ear, kind } = event.target.dataset;
-      thresholds[Number(hz)][ear][kind] = event.target.value;
-      renderResults();
+
+      if (
+        thresholds[Number(hz)] &&
+        thresholds[Number(hz)][ear]
+      ) {
+        thresholds[Number(hz)][ear][kind] = event.target.value;
+        renderResults();
+      }
     });
   });
 }
@@ -62,19 +75,32 @@ function makeInput(hz, ear, kind) {
   `;
 }
 
+function formatFrequency(hz) {
+  return hz >= 1000 ? `${hz / 1000} kHz` : `${hz} Hz`;
+}
+
+// ---------------------------------------------
+// LECTURA Y FORMATO DE DATOS
+// ---------------------------------------------
+
 function val(hz, ear, kind) {
   const raw = thresholds[hz]?.[ear]?.[kind];
 
-  if (raw === "" || raw === undefined) return null;
+  if (raw === "" || raw === undefined || raw === null) {
+    return null;
+  }
 
   const number = Number(raw);
+
   return Number.isFinite(number) ? number : null;
 }
 
-function fmt(n) {
-  return n === null || !Number.isFinite(n)
-    ? "No calculable con los datos ingresados"
-    : `${n} dB HL`;
+function fmt(value) {
+  if (value === null || !Number.isFinite(value)) {
+    return "No calculable con los datos ingresados";
+  }
+
+  return `${value} dB HL`;
 }
 
 function opposite(ear) {
@@ -85,30 +111,46 @@ function earName(ear) {
   return ear === "right" ? "OD" : "OI";
 }
 
-// Atenuación interaural de referencia para fonos supraaurales.
+// ---------------------------------------------
+// CONSTANTES Y EFECTO DE OCLUSIÓN
+// ---------------------------------------------
+
+// Atenuación interaural de referencia para VA
+// con fonos supraaurales, según el material.
 function interauralAttenuation() {
   return 40;
 }
 
-// Efecto de oclusión según el tipo de audición del oído no estudiado.
+// Efecto de oclusión según la frecuencia y el tipo
+// de audición del oído no estudiado (ONE).
 function oeValue(hz) {
-  const type = $("nteType")?.value;
+  const type = $("nteType").value;
 
-  if (!["normal", "sn"].includes(type)) return 0;
+  if (!["normal", "sn"].includes(type)) {
+    return 0;
+  }
 
-  return {
+  const values = {
     250: 15,
     500: 15,
     1000: 10
-  }[hz] || 0;
+  };
+
+  return values[hz] ?? 0;
 }
 
-function calculate(hz) {
-  const te = $("testEar")?.value || "right";
-  const nte = opposite(te);
-  const path = $("pathway")?.value || "air";
+// ---------------------------------------------
+// CÁLCULO POR FRECUENCIA
+// ---------------------------------------------
 
-  const ia = interauralAttenuation();
+function calculate(hz) {
+  const te = $("testEar").value;
+  const nte = opposite(te);
+  const path = $("pathway").value;
+
+  // IA utilizada para evaluar el criterio de VA.
+  // En VO, la IA del estímulo óseo se considera 0.
+  const ia = path === "air" ? interauralAttenuation() : 0;
 
   const teAir = val(hz, te, "air");
   const teBone = val(hz, te, "bone");
@@ -128,39 +170,67 @@ function calculate(hz) {
     nteGap = nteAir - nteBone;
   }
 
+  // =============================================
+  // VÍA AÉREA
+  // =============================================
+
   if (path === "air") {
-    // Vía aérea: comparar VA del oído estudiado con VO del no estudiado.
+    // Se compara VA del oído estudiado con VO del ONE.
     complete = teAir !== null && nteBone !== null;
 
     if (!complete) {
       const missing = [];
-      if (teAir === null) missing.push(`VA del ${earName(te)}`);
-      if (nteBone === null) missing.push(`VO del ${earName(nte)}`);
+
+      if (teAir === null) {
+        missing.push(`VA del ${earName(te)}`);
+      }
+
+      if (nteBone === null) {
+        missing.push(`VO del ${earName(nte)}`);
+      }
 
       reason =
         `Faltan datos: ${missing.join(" y ")}. ` +
         "No se puede comprobar el criterio de vía aérea.";
     } else {
       const difference = teAir - nteBone;
+
       needed = difference >= ia;
 
-      reason = needed
-        ? `VA del ${earName(te)} (${teAir}) − VO del ${earName(nte)} (${nteBone}) = ${difference} dB. La diferencia alcanza la atenuación interaural de referencia de ${ia} dB.`
-        : `VA del ${earName(te)} (${teAir}) − VO del ${earName(nte)} (${nteBone}) = ${difference} dB. No alcanza la atenuación interaural de referencia de ${ia} dB.`;
+      if (needed) {
+        reason =
+          `VA del ${earName(te)} (${teAir}) − VO del ${earName(nte)} ` +
+          `(${nteBone}) = ${difference} dB. ` +
+          `La diferencia alcanza la atenuación interaural de referencia ` +
+          `de ${ia} dB.`;
+      } else {
+        reason =
+          `VA del ${earName(te)} (${teAir}) − VO del ${earName(nte)} ` +
+          `(${nteBone}) = ${difference} dB. ` +
+          `No alcanza la atenuación interaural de referencia de ${ia} dB.`;
+      }
 
       if (needed) {
-        // Mínimo = VA(ONE) - IA + brecha aéreo-ósea del ONE.
+        // Mínimo = VA(ONE) - IA + GAP(ONE).
         minLevel =
           nteAir !== null && nteGap !== null
             ? nteAir - ia + nteGap
             : null;
 
-        // Máximo según el material de estudio: VO(OE) + 40 dB.
-        maxLevel = teBone !== null ? teBone + 40 : null;
+        // Máximo = VO(OE) + IA (40 dB).
+        maxLevel =
+          teBone !== null
+            ? teBone + interauralAttenuation()
+            : null;
       }
     }
-  } else {
-    // Vía ósea.
+  }
+
+  // =============================================
+  // VÍA ÓSEA
+  // =============================================
+
+  else {
     const abg =
       teAir !== null && teBone !== null
         ? teAir - teBone
@@ -168,6 +238,8 @@ function calculate(hz) {
 
     oe = oeValue(hz);
 
+    // Comprobación orientativa de posible respuesta
+    // contralateral según el criterio del programa.
     const canHearContralateral =
       teBone !== null &&
       nteBone !== null &&
@@ -180,27 +252,39 @@ function calculate(hz) {
 
     if (!complete) {
       const missing = [];
-      if (teAir === null) missing.push(`VA del ${earName(te)}`);
-      if (teBone === null) missing.push(`VO del ${earName(te)}`);
-      if (nteBone === null) missing.push(`VO del ${earName(nte)}`);
+
+      if (teAir === null) {
+        missing.push(`VA del ${earName(te)}`);
+      }
+
+      if (teBone === null) {
+        missing.push(`VO del ${earName(te)}`);
+      }
+
+      if (nteBone === null) {
+        missing.push(`VO del ${earName(nte)}`);
+      }
 
       reason =
         `Faltan datos: ${missing.join(", ")}. ` +
-        "Se necesitan para comprobar la brecha y la posible respuesta del oído no estudiado.";
+        "Se necesitan para comprobar la brecha y la posible respuesta del ONE.";
     } else if (abg < 10) {
       needed = false;
+
       reason =
         `Brecha aéreo-ósea del ${earName(te)}: ${abg} dB. ` +
         "Es menor de 10 dB, por lo que no cumple el criterio de brecha del material.";
     } else if (!canHearContralateral) {
       needed = false;
+
       reason =
         `Brecha aéreo-ósea del ${earName(te)}: ${abg} dB. ` +
-        `Aunque alcanza 10 dB o más, la VO del ${earName(nte)} ` +
+        `Aunque alcanza 10 dB o más, la VO ingresada del ${earName(nte)} ` +
         "no activa la comprobación orientativa de posible respuesta contralateral. " +
         "La brecha por sí sola no indica enmascaramiento.";
     } else {
       needed = true;
+
       reason =
         `Brecha aéreo-ósea del ${earName(te)}: ${abg} dB. ` +
         `Alcanza 10 dB o más y la VO del ${earName(nte)} ` +
@@ -208,17 +292,22 @@ function calculate(hz) {
     }
 
     if (needed) {
-      // Mínimo = VO(OE) + efecto de oclusión + brecha del ONE.
+      // Mínimo = VO(OE) + efecto de oclusión + GAP(ONE).
       minLevel =
         nteGap !== null
           ? teBone + oe + nteGap
           : null;
 
-      // Máximo según el material de estudio: VO(OE) + IA de 40 dB.
-      maxLevel = teBone !== null ? teBone + 40 : null;
+      // Máximo = VO(OE) + IA de referencia (40 dB),
+      // según la metodología descrita en el HTML.
+      maxLevel =
+        teBone !== null
+          ? teBone + interauralAttenuation()
+          : null;
     }
   }
 
+  // Advierte si el nivel mínimo alcanza o supera el máximo.
   dilemma =
     needed &&
     minLevel !== null &&
@@ -241,15 +330,23 @@ function calculate(hz) {
   };
 }
 
+// ---------------------------------------------
+// PRESENTACIÓN DE RESULTADOS
+// ---------------------------------------------
+
 function renderResults() {
   const results = $("results");
-  if (!results) {
-    console.error('No se encontró el elemento "results" en index.html.');
+  const pathway = $("pathway");
+
+  if (!results || !pathway) {
+    console.error(
+      'No se encontró "results" o "pathway". Revisa los IDs de index.html.'
+    );
     return;
   }
 
   const pathLabel =
-    $("pathway")?.value === "air" ? "Vía aérea" : "Vía ósea";
+    pathway.value === "air" ? "Vía aérea" : "Vía ósea";
 
   results.innerHTML = FREQUENCIES.map((hz) => {
     const r = calculate(hz);
@@ -266,6 +363,8 @@ function renderResults() {
         ? "Evaluar enmascaramiento"
         : "No indicado por esta regla";
 
+    // Aviso de OE solo en vía ósea cuando se indica
+    // enmascaramiento y el efecto calculado es mayor que 0.
     const showOeNotice =
       r.path === "bone" &&
       r.needed &&
@@ -290,7 +389,7 @@ function renderResults() {
           <p class="warning">
             <strong>Atención:</strong>
             el mínimo alcanza o supera el máximo estimado.
-            Revisa este caso con tu docente o protocolo de la asignatura.
+            Revisa este caso con tu docente o el protocolo de la asignatura.
           </p>
         `;
       }
@@ -305,26 +404,30 @@ function renderResults() {
       }
     }
 
-    const explanation = r.path === "air"
-      ? "Se compara la VA del oído estudiado con la VO del oído no estudiado. Si la diferencia alcanza la atenuación interaural de referencia, se evalúa el enmascaramiento para evitar que la respuesta provenga del oído contrario."
-      : "La vía ósea puede estimular ambas cócleas con atenuación interaural despreciable. Según el material de estudio, se considera una brecha aéreo-ósea de 10 dB o más y la posibilidad de respuesta del oído no estudiado.";
+    const explanation =
+      r.path === "air"
+        ? "Se compara la VA del oído estudiado con la VO del oído no estudiado. Si la diferencia alcanza la atenuación interaural de referencia, se evalúa el enmascaramiento para evitar que la respuesta provenga del oído contrario."
+        : "La vía ósea puede estimular ambas cócleas con atenuación interaural despreciable. Según el material de estudio, se considera una brecha aéreo-ósea de 10 dB o más y la posibilidad de respuesta del oído no estudiado.";
 
     return `
       <article class="result-card">
         <h3>
-          ${hz >= 1000 ? hz / 1000 + " kHz" : hz + " Hz"}
-          · ${pathLabel}
+          ${formatFrequency(hz)} · ${pathLabel}
         </h3>
 
-        ${showOeNotice ? `
-          <div class="oe-notice">
-            <span class="oe-notice-icon" aria-hidden="true">♡</span>
-            <span>
-              <strong>Efecto de oclusión: +${r.oe} dB.</strong>
-              Se considera en el nivel mínimo orientativo para esta frecuencia.
-            </span>
-          </div>
-        ` : ""}
+        ${
+          showOeNotice
+            ? `
+              <div class="oe-notice">
+                <span class="oe-notice-icon" aria-hidden="true">♡</span>
+                <span>
+                  <strong>Efecto de oclusión: +${r.oe} dB.</strong>
+                  Se considera en el nivel mínimo orientativo para esta frecuencia.
+                </span>
+              </div>
+            `
+            : ""
+        }
 
         <span class="status ${statusClass}">${statusText}</span>
 
@@ -337,16 +440,24 @@ function renderResults() {
 
         ${levelText}
 
-        ${r.needed ? `
-          <details>
-            <summary>¿Por qué se enmascara?</summary>
-            <p>${explanation}</p>
-          </details>
-        ` : ""}
+        ${
+          r.needed
+            ? `
+              <details>
+                <summary>¿Por qué se enmascara?</summary>
+                <p>${explanation}</p>
+              </details>
+            `
+            : ""
+        }
       </article>
     `;
   }).join("");
 }
+
+// ---------------------------------------------
+// BOTÓN LIMPIAR
+// ---------------------------------------------
 
 function clearAll() {
   FREQUENCIES.forEach((hz) => {
@@ -364,36 +475,34 @@ function clearAll() {
   renderResults();
 }
 
+// ---------------------------------------------
+// EVENTOS
+// ---------------------------------------------
+
 function init() {
-  const requiredIds = [
-    "thresholdRows",
-    "results",
-    "pathway",
-    "testEar",
-    "nteType",
-    "clearBtn"
-  ];
+  const pathway = $("pathway");
+  const testEar = $("testEar");
+  const nteType = $("nteType");
+  const clearBtn = $("clearBtn");
 
-  const missingIds = requiredIds.filter((id) => !$(id));
-
-  if (missingIds.length) {
+  if (!pathway || !testEar || !nteType || !clearBtn) {
     console.error(
-      "No se encontraron estos elementos en index.html:",
-      missingIds.join(", ")
+      "Faltan elementos necesarios en index.html. Revisa los IDs de los controles."
     );
     return;
   }
 
-  ["pathway", "testEar", "nteType"].forEach((id) => {
-    $(id).addEventListener("change", renderResults);
-  });
-
-  $("clearBtn").addEventListener("click", clearAll);
-
   initTable();
+
+  pathway.addEventListener("change", renderResults);
+  testEar.addEventListener("change", renderResults);
+  nteType.addEventListener("change", renderResults);
+  clearBtn.addEventListener("click", clearAll);
+
   renderResults();
 }
 
+// Espera a que el HTML esté disponible antes de ejecutar el programa.
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
 } else {
