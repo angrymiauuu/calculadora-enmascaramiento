@@ -38,7 +38,7 @@ function opposite(ear) { return ear === "right" ? "left" : "right"; }
 function earName(ear) { return ear === "right" ? "OD" : "OI"; }
 function oeValue(hz) {
   if (!["normal", "sn"].includes($("nteType").value)) return 0;
-  return ({250: 20, 500: 15, 1000: 5})[hz] || 0;
+  return ({250: 15, 500: 15, 1000: 10})[hz] || 0;
 }
 function interauralAttenuation() {
   return 40;
@@ -65,7 +65,7 @@ function calculate(hz) {
       const difference = teAir - nteReference;
       needed = difference >= ia;
       reason = `VA del ${earName(te)} (${teAir}) − ${nteBone !== null ? "VO" : "VA aproximada"} del ${earName(nte)} (${nteReference}) = ${difference} dB. Criterio de referencia: ${ia} dB o más.`
-        + (usedProxy ? " No se ingresó VO del oído no estudiado; se utilizó su VA como aproximación conservadora." : "");
+        + (usedProxy ? " No se ingresó VO del oído no estudiado." : "");
     }
   } else {
     const abg = teAir !== null && teBone !== null ? teAir - teBone : null;
@@ -73,11 +73,11 @@ function calculate(hz) {
     complete = (teAir !== null && teBone !== null) || (teBone !== null && nteAir !== null);
     if (abg !== null && abg > 10) {
       needed = true;
-      reason = `La brecha aéreo-ósea del oído estudiado es ${abg} dB, mayor de 10 dB; se recomienda evaluar enmascaramiento por VO.`;
+      reason = `El GAP aéreo-óseo del oído estudiado es ${abg} dB, mayor de 10 dB; se recomienda evaluar enmascaramiento por VO.`;
     } else if (teBone !== null && nteAir !== null && (nteBone === null || nteBone <= teBone)) {
       // Conservative flag: BC crosses to both cochleae; confirm against the local protocol.
       needed = true;
-      reason = `La VO puede ser percibida por ambas cócleas (IA ósea ≈ 0 dB). Con los datos ingresados, el oído no estudiado podría responder; confirma el criterio con el protocolo de tu curso.`;
+      reason = `La VO puede ser percibida por ambas cócleas (IA ósea = 0 dB). Con los datos ingresados, el oído no estudiado podría responder.`;
     } else if (abg !== null) {
       needed = false;
       reason = `Brecha aéreo-ósea del oído estudiado: ${abg} dB. No se activa el criterio de brecha > 10 dB y los datos disponibles no activan el criterio conservador de posible respuesta contralateral.`;
@@ -118,8 +118,8 @@ function renderResults() {
       ${r.needed ? `<details open>
         <summary>¿Por qué se enmascara?</summary>
         <p>${r.path === "air"
-          ? "En vía aérea, el sonido puede cruzar al oído contrario. Se compara el umbral de VA del oído estudiado con la VO del oído no estudiado (o con su VA si la VO no está disponible). La regla exacta depende del transductor y del protocolo."
-          : "En vía ósea, la vibración llega a ambas cócleas con poca atenuación interaural. El enmascaramiento ayuda a identificar qué oído responde. La brecha aéreo-ósea >10 dB es un criterio clásico, pero la indicación final depende de todos los umbrales."}
+          ? "En vía aérea, el sonido puede cruzar al oído contrario. Se compara el umbral de VA del oído estudiado con la VO del oído no estudiado, y se enmascara si hay una diferencia de 40dB o más."
+          : "En vía ósea, la vibración llega a ambas cócleas al ser la AI 0. Aunque se suele enmascarar cuando hay una diferencia de >10 dB entre la VA y VO del OE, depende de si el otro oído puede escucharlo."}
           ${r.path === "bone" ? " El efecto de oclusión solo se suma al cálculo inicial si corresponde al oído no estudiado y al tipo de transductor." : ""}</p>
       </details>` : ""}
     </article>`;
@@ -138,3 +138,8 @@ function clearAll() {
 $("clearBtn").addEventListener("click", clearAll);
 initTable();
 renderResults();
+${oeAlert ? `
+  <p class="occlusion-message">
+    ¡La vía ósea está mejorada ${({ 250: 10, 500: 10, 1000: 10 }[hz])} dB porque se aplica efecto de oclusión!
+  </p>
+` : ""}
