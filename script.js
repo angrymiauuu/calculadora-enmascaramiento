@@ -41,7 +41,7 @@ function oeValue(hz) {
   return ({250: 20, 500: 15, 1000: 5})[hz] || 0;
 }
 function interauralAttenuation() {
-  return $("transducer").value === "supra" ? 40 : 55;
+  return 40;
 }
 function calculate(hz) {
   const te = $("testEar").value;
@@ -115,13 +115,13 @@ function renderResults() {
       <p>${r.reason}</p>
       ${levelText}
       ${oeAlert ? `<p><strong>Posible efecto de oclusión:</strong> se considera en VO a esta frecuencia porque el tipo de audición seleccionado para el oído no estudiado es normoacusia/HSN.</p>` : ""}
-      <details>
-        <summary>¿Por qué se enmascara / qué significa?</summary>
+      ${r.needed ? `<details open>
+        <summary>¿Por qué se enmascara?</summary>
         <p>${r.path === "air"
           ? "En vía aérea, el sonido puede cruzar al oído contrario. Se compara el umbral de VA del oído estudiado con la VO del oído no estudiado (o con su VA si la VO no está disponible). La regla exacta depende del transductor y del protocolo."
           : "En vía ósea, la vibración llega a ambas cócleas con poca atenuación interaural. El enmascaramiento ayuda a identificar qué oído responde. La brecha aéreo-ósea >10 dB es un criterio clásico, pero la indicación final depende de todos los umbrales."}
           ${r.path === "bone" ? " El efecto de oclusión solo se suma al cálculo inicial si corresponde al oído no estudiado y al tipo de transductor." : ""}</p>
-      </details>
+      </details>` : ""}
     </article>`;
   }).join("");
 }
@@ -134,7 +134,7 @@ function clearAll() {
   document.querySelectorAll("input.threshold").forEach(input => input.value = "");
   renderResults();
 }
-["pathway", "testEar", "transducer", "nteType"].forEach(id => $(id).addEventListener("change", renderResults));
+["pathway", "testEar", "nteType"].forEach(id => $(id).addEventListener("change", renderResults));
 $("clearBtn").addEventListener("click", clearAll);
 initTable();
 renderResults();
