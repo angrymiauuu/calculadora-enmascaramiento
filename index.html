@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Calculadora de enmascaramiento audiológico</title>
+  <link rel="stylesheet" href="estilos.css">
+</head>
+<body>
+  <main class="container">
+    <header class="hero">
+      <p class="eyebrow">HERRAMIENTA DE ESTUDIO</p>
+      <h1>Calculadora de enmascaramiento</h1>
+      <p>Ingresa los umbrales por frecuencia para revisar si corresponde enmascarar.</p>
+    </header>
+
+    <section class="panel illustration-panel">
+      <div>
+        <h2>Vía estudiada</h2>
+        <p class="muted">Puedes reemplazar esta ilustración por tu propia imagen.</p>
+      </div>
+      <img id="earImage" src="imagen-oido.png" alt="Ilustración del oído y la vía auditiva"
+           onerror="this.hidden=true; document.getElementById('imageFallback').hidden=false;">
+      <div id="imageFallback" class="image-fallback" hidden>
+        <span>🦻</span>
+        <p>Guarda tu imagen como <code>imagen-oido.png</code> en la misma carpeta que index.html.</p>
+      </div>
+    </section>
+
+    <section class="panel controls">
+      <div class="control-grid">
+        <label>Vía que estás evaluando
+          <select id="pathway">
+            <option value="air">Vía aérea (VA)</option>
+            <option value="bone">Vía ósea (VO)</option>
+          </select>
+        </label>
+        <label>Oído estudiado (OE / TE)
+          <select id="testEar">
+            <option value="right">Derecho (OD)</option>
+            <option value="left">Izquierdo (OI)</option>
+          </select>
+        </label>
+        <label>Transductor
+          <select id="transducer">
+            <option value="supra">Auriculares supraaurales (IA 40 dB)</option>
+            <option value="insert">Insertos (IA configurable; por defecto 55 dB)</option>
+          </select>
+        </label>
+        <label>Oído no estudiado: tipo de audición
+          <select id="nteType">
+            <option value="normal">Normoacusia</option>
+            <option value="sn">Hipoacusia neurosensorial</option>
+            <option value="conductive">Hipoacusia conductiva/mixta</option>
+            <option value="unknown">Desconocido / aún no determinado</option>
+          </select>
+        </label>
+      </div>
+      <p class="note">IA significa atenuación interaural. Para insertos se usa 55 dB como valor inicial de referencia en este prototipo; confirma el valor que pide tu curso.</p>
+    </section>
+
+    <section class="panel">
+      <div class="section-heading">
+        <div>
+          <h2>Umbrales auditivos</h2>
+          <p class="muted">Introduce dB HL. Deja vacío lo que no tengas medido.</p>
+        </div>
+        <button id="clearBtn" class="button secondary" type="button">Limpiar datos</button>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th rowspan="2">Frecuencia</th>
+              <th colspan="2">Oído derecho (OD)</th>
+              <th colspan="2">Oído izquierdo (OI)</th>
+            </tr>
+            <tr>
+              <th>VA</th><th>VO</th><th>VA</th><th>VO</th>
+            </tr>
+          </thead>
+          <tbody id="thresholdRows"></tbody>
+        </table>
+      </div>
+      <div class="legend">
+        <span><i class="dot right"></i> OD</span>
+        <span><i class="dot left"></i> OI</span>
+        <span>Los cálculos se actualizan automáticamente.</span>
+      </div>
+    </section>
+
+    <section class="panel results-panel">
+      <div class="section-heading">
+        <div>
+          <h2>Resultado por frecuencia</h2>
+          <p class="muted">La recomendación se basa en las reglas configuradas abajo.</p>
+        </div>
+      </div>
+      <div id="results" class="results-grid"></div>
+    </section>
+
+    <section class="panel methodology">
+      <h2>¿Por qué se enmascara?</h2>
+      <details>
+        <summary>Vía aérea: criterio de enmascaramiento</summary>
+        <p>En este prototipo se marca como posible necesidad de enmascaramiento cuando VA del oído estudiado − VO del oído no estudiado es igual o mayor que la IA seleccionada. Si no hay VO del oído no estudiado, se usa su VA como aproximación conservadora y se indica esa limitación.</p>
+      </details>
+      <details>
+        <summary>Vía ósea: criterio de enmascaramiento</summary>
+        <p>La vía ósea estimula ambas cócleas con atenuación interaural despreciable. Se marca la necesidad de enmascaramiento cuando hay una brecha aéreo-ósea mayor de 10 dB en el oído estudiado, o cuando los datos sugieren que el oído contrario podría responder. La decisión clínica depende del caso y debe confirmarse con el protocolo docente.</p>
+      </details>
+      <details>
+        <summary>Efecto de oclusión</summary>
+        <p>Se considera solo para enmascaramiento por vía ósea y cuando el oído no estudiado presenta normoacusia o hipoacusia neurosensorial. Los valores de referencia de esta versión son 20 dB a 250 Hz, 15 dB a 500 Hz y 5 dB a 1000 Hz; 0 dB en las demás frecuencias. Los valores pueden variar según el transductor y el protocolo.</p>
+      </details>
+      <details>
+        <summary>Nivel mínimo y máximo (referencia educativa)</summary>
+        <p>Vía aérea: mínimo inicial = VA del oído no estudiado + 15 dB. Vía ósea: mínimo inicial = VA del oído no estudiado + 15 dB + efecto de oclusión aplicable. Máximo orientativo = VO del oído estudiado + IA. Si el mínimo alcanza o supera el máximo, se señala un posible dilema de enmascaramiento. Estos cálculos son orientativos y no sustituyen el procedimiento de meseta ni el juicio clínico.</p>
+      </details>
+    </section>
+
+    <footer>
+      <strong>Uso educativo:</strong> no utilizar como única base para decisiones clínicas. Verifica los criterios, el tipo de transductor y los niveles con tu docente o protocolo local.
+    </footer>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
