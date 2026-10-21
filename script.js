@@ -1,12 +1,6 @@
 
 "use strict";
 
-// ======================================================
-// CONFIGURACIÓN
-// Imágenes que debes crear y guardar dentro de la carpeta
-// "img" de tu repositorio.
-// ======================================================
-
 const IMAGENES = {
   "VA-izquierdo": "img/va-izquierdo.png",
   "VA-derecho": "img/va-derecho.png",
