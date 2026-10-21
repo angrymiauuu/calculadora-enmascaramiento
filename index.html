@@ -4,184 +4,210 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#fff4f8">
-  <title>Calculadora de enmascaramiento | Audiología</title>
-  <link rel="stylesheet" href="estilos.css">
+  <meta name="theme-color" content="#f7f5ff">
+  <title>Calculadora de Enmascaramiento Audiológico</title>
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-  <main class="container">
+  <header class="encabezado">
+    <div class="logo">♫</div>
+    <div>
+      <h1>Calculadora de enmascaramiento</h1>
+      <p>Herramienta didáctica de audiología</p>
+    </div>
+  </header>
 
-    <header class="hero">
-      <p class="eyebrow">♡ AUDIOLOGÍA · HERRAMIENTA DE ESTUDIO ♡</p>
-      <h1>Calculadora de <span class="gradient-text">enmascaramiento</span></h1>
-      <div class="hero-decoration" aria-hidden="true">୨୧</div>
-    </header>
-    
-      <div class="section-title">
-        <span class="section-icon">♡</span>
-        <div>
-          <h2>Configuración</h2>
-          <p class="muted">Selecciona qué estás evaluando.</p>
-        </div>
+  <main class="contenedor">
+    <section class="panel controles">
+      <div class="campo">
+        <label for="frecuencia">Frecuencia (Hz)</label>
+        <select id="frecuencia">
+          <option value="125">125 Hz</option>
+          <option value="250">250 Hz</option>
+          <option value="500">500 Hz</option>
+          <option value="750">750 Hz</option>
+          <option value="1000" selected>1000 Hz</option>
+          <option value="1500">1500 Hz</option>
+          <option value="2000">2000 Hz</option>
+          <option value="3000">3000 Hz</option>
+          <option value="4000">4000 Hz</option>
+          <option value="6000">6000 Hz</option>
+          <option value="8000">8000 Hz</option>
+        </select>
       </div>
 
-      <div class="control-grid">
-        <label for="pathway">
-          Vía evaluada
-          <select id="pathway">
-            <option value="air">Vía aérea (VA)</option>
-            <option value="bone">Vía ósea (VO)</option>
-          </select>
-        </label>
-
-        <label for="testEar">
-          Oído estudiado (OE)
-          <select id="testEar">
-            <option value="right">Derecho (OD)</option>
-            <option value="left">Izquierdo (OI)</option>
-          </select>
-        </label>
-
-        <label for="nteType" class="full-width">
-          Tipo de audición del oído no estudiado (ONE)
-          <select id="nteType">
-            <option value="normal">Normoacusia</option>
-            <option value="sn">Hipoacusia sensorioneural</option>
-            <option value="conductive">Hipoacusia conductiva/mixta</option>
-          </select>
-        </label>
+      <div class="campo">
+        <label for="via">Vía que se evalúa</label>
+        <select id="via">
+          <option value="VA">Vía aérea (VA)</option>
+          <option value="VO">Vía ósea (VO)</option>
+        </select>
       </div>
 
-      <p class="note">
-        <span aria-hidden="true">♡</span>
-        Para vía aérea se utiliza una atenuación interaural de referencia
-        de 40 dB con fonos supraaurales. Para vía ósea se considera 0 dB.
-      </p>
+      <div class="campo">
+        <label for="oido">Oído estudiado (OE)</label>
+        <select id="oido">
+          <option value="izquierdo">Izquierdo</option>
+          <option value="derecho">Derecho</option>
+        </select>
+      </div>
+
+      <div id="avisoFrecuencia" class="aviso" hidden>
+        Para la vía ósea, selecciona una frecuencia de 250, 500, 1000,
+        2000, 3000 o 4000 Hz.
+      </div>
+
+      <div id="opcionesOclusion" class="opciones-occlusion" hidden>
+        <label class="check-label" for="neurosensorial">
+          <input type="checkbox" id="neurosensorial">
+          <span>
+            El oído no estudiado (ONE) presenta normoacusia o
+            hipoacusia neurosensorial.
+          </span>
+        </label>
+        <p class="texto-ayuda">
+          Al marcarlo, se aplicará la corrección por efecto de oclusión
+          indicada para la frecuencia seleccionada.
+        </p>
+      </div>
     </section>
 
-    <section class="panel">
-      <div class="section-heading">
-        <div class="section-title">
-          <span class="section-icon">✿</span>
-          <div>
-            <h2>Umbrales auditivos</h2>
-            <p class="muted">
-              Introduce los valores en dB HL.
-            </p>
+    <section class="panel zona-audiometria">
+      <div class="titulo-zona">
+        <div>
+          <h2>Datos audiométricos</h2>
+          <p>Ingresa los umbrales en dB HL.</p>
+        </div>
+        <span id="etiquetaVia" class="etiqueta-via">VÍA AÉREA</span>
+      </div>
+
+      <div class="escenario">
+        <!-- Lado izquierdo de la pantalla -->
+        <div class="columna-oido lado-izquierdo">
+          <div class="titulo-oido" id="tituloLadoIzquierdo">
+            Oído derecho
+          </div>
+
+          <div class="campo-dato campo-va" id="contenedorVaIzquierda">
+            <label for="vaIzquierda" id="labelVaIzquierda">VA</label>
+            <input
+              type="number"
+              id="vaIzquierda"
+              min="-10"
+              max="120"
+              step="5"
+              placeholder="dB HL"
+            >
           </div>
         </div>
 
-        <button id="clearBtn" class="button secondary" type="button">
-          <span aria-hidden="true">↺</span> Limpiar
+        <!-- Imagen central y casillas de vía ósea -->
+        <div class="centro">
+          <div class="imagen-cabeza">
+            <img
+              id="imagenOido"
+              src="img/va-izquierdo.png"
+              alt="Esquema audiológico del oído estudiado"
+            >
+
+            <div class="campo-vo vo-izquierda">
+              <label for="voIzquierda" id="labelVoIzquierda">VO</label>
+              <input
+                type="number"
+                id="voIzquierda"
+                min="-10"
+                max="120"
+                step="5"
+                placeholder="dB"
+              >
+            </div>
+
+            <div class="campo-vo vo-derecha">
+              <label for="voDerecha" id="labelVoDerecha">VO</label>
+              <input
+                type="number"
+                id="voDerecha"
+                min="-10"
+                max="120"
+                step="5"
+                placeholder="dB"
+              >
+            </div>
+          </div>
+
+          <p class="leyenda-centro">
+            <span class="punto rojo"></span> Oído derecho
+            <span class="punto azul"></span> Oído izquierdo
+          </p>
+        </div>
+
+        <!-- Lado derecho de la pantalla -->
+        <div class="columna-oido lado-derecho">
+          <div class="titulo-oido" id="tituloLadoDerecho">
+            Oído izquierdo
+          </div>
+
+          <div class="campo-dato campo-va" id="contenedorVaDerecha">
+            <label for="vaDerecha" id="labelVaDerecha">VA</label>
+            <input
+              type="number"
+              id="vaDerecha"
+              min="-10"
+              max="120"
+              step="5"
+              placeholder="dB HL"
+            >
+          </div>
+        </div>
+      </div>
+
+      <div class="referencia">
+        <span>OE = oído estudiado</span>
+        <span>ONE = oído no estudiado</span>
+      </div>
+
+      <div class="acciones">
+        <button id="calcular" class="boton-principal">
+          Calcular enmascaramiento
+        </button>
+        <button id="limpiar" class="boton-secundario" type="button">
+          Limpiar datos
         </button>
       </div>
 
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th rowspan="2">Frecuencia</th>
-              <th colspan="2">Oído derecho (OD)</th>
-              <th colspan="2">Oído izquierdo (OI)</th>
-            </tr>
-            <tr>
-              <th>VA</th>
-              <th>VO</th>
-              <th>VA</th>
-              <th>VO</th>
-            </tr>
-          </thead>
-          <tbody id="thresholdRows"></tbody>
-        </table>
-      </div>
-
-      <div class="legend">
-        <span><i class="dot right"></i> Oído derecho</span>
-        <span><i class="dot left"></i> Oído izquierdo</span>
-        <span class="legend-note">Los resultados se actualizan al escribir.</span>
-      </div>
+      <p id="mensajeError" class="mensaje-error" role="alert" hidden></p>
     </section>
 
-    <section class="panel results-panel">
-      <div class="section-heading">
-        <div class="section-title">
-          <span class="section-icon">♡</span>
-          <div>
-            <h2>Resultados por frecuencia</h2>
-            <p class="muted">
-              Revisa cada frecuencia por separado.
-            </p>
-          </div>
+    <section id="resultados" class="panel resultados" hidden>
+      <h2>Resultado</h2>
+
+      <div id="estadoEnmascaramiento" class="estado"></div>
+      <p id="detalleResultado" class="detalle-resultado"></p>
+
+      <div id="datosResultado" class="resultados-grid" hidden>
+        <div class="resultado-caja">
+          <span class="resultado-titulo">Mínimo</span>
+          <strong id="resultadoMinimo">—</strong>
+          <small>dB EM</small>
+        </div>
+
+        <div class="resultado-caja">
+          <span class="resultado-titulo">Máximo</span>
+          <strong id="resultadoMaximo">—</strong>
+          <small>dB EM</small>
+        </div>
+
+        <div class="resultado-caja resultado-ee">
+          <span class="resultado-titulo">EE (espectro de enmascaramiento)</span>
+          <strong id="resultadoEE">—</strong>
+          <small>dB EM</small>
         </div>
       </div>
 
-      <div id="results" class="results-grid" aria-live="polite"></div>
+      <p id="notaResultado" class="nota-resultado"></p>
     </section>
 
-    <section class="panel methodology">
-      <div class="section-title">
-        <span class="section-icon">୨୧</span>
-        <div>
-          <h2>Sobre los criterios utilizados</h2>
-          <p class="muted">Una referencia rápida para estudiar.</p>
-        </div>
-      </div>
-
-      <details>
-        <summary>Vía aérea</summary>
-        <p>
-          Se compara la vía aérea del oído estudiado con la vía ósea del
-          oído no estudiado. Aquí se considera una atenuación
-          interaural de 40 dB para fonos supraaurales.
-        </p>
-      </details>
-
-      <details>
-        <summary>Vía ósea</summary>
-        <p>
-          Se considera una brecha un GAP osteo-aéreo de 10 dB o más
-          en el oído estudiado, junto con la posibilidad de que el
-          el oído no estudiado perciba el estímulo. Sin embargo, la
-          diferencia de 10 dB por sí sola depende del caso.
-        </p>
-      </details>
-
-      <details>
-        <summary>Efecto de oclusión</summary>
-        <p>
-          Para vía ósea, se aplica 15 dB a 250 y 500 Hz, y
-          10 dB a 1000 Hz, cuando corresponde a normoacusia o
-          hipoacusia neurosensorial en el oído no estudiado. En las
-          demás frecuencias se utiliza 0 dB.
-        </p>
-      </details>
-
-      <details>
-        <summary>Niveles mínimo y máximo</summary>
-        <p>
-          Vía aérea: mínimo = VA del ONE − atenuación interaural (40dB) +
-          GAP del ONE. Máximo = VO del OE +
-          atenuación interaural (40dB). El máximo es el mismo tanto para VA
-          como para VO.
-        </p>
-        <p>
-          Vía ósea: mínimo = VO del OE + efecto de oclusión (si aplica) +
-          GAP del ONE. Máximo = VO del OE + AI (40dB)
-        </p>
-        <p>
-          Estos cálculos son referencias educativas.
-        </p>
-      </details>
-    </section>
-
-    <footer>
-      <span class="footer-heart">♡</span>
-      <p>
-        <strong>Herramienta de estudio.</strong>
-        Verifica los datos.
-        No utilices esta calculadora como única base para decisiones clínicas.
-      </p>
-    </footer>
 
   </main>
 
