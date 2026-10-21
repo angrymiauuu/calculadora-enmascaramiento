@@ -1,6 +1,10 @@
 
 "use strict";
 
+// =====================================================
+// CONFIGURACIÓN DE IMÁGENES
+// =====================================================
+
 const IMAGENES = {
   "VA-izquierdo": "img/va-izquierdo.png",
   "VA-derecho": "img/va-derecho.png",
@@ -11,11 +15,11 @@ const IMAGENES = {
 const FRECUENCIAS_VO = [250, 500, 1000, 2000, 3000, 4000];
 const FRECUENCIAS_EFECTO_OCLUSION = [250, 500, 1000];
 
-// ======================================================
-// ELEMENTOS DE LA PÁGINA
-// ======================================================
-
 const $ = (id) => document.getElementById(id);
+
+// =====================================================
+// ELEMENTOS HTML
+// =====================================================
 
 const frecuencia = $("frecuencia");
 const via = $("via");
@@ -52,27 +56,45 @@ const resultadoEE = $("resultadoEE");
 const notaResultado = $("notaResultado");
 const mensajeError = $("mensajeError");
 
-// ======================================================
-// IDENTIFICACIÓN DE LOS OÍDOS
+// =====================================================
+// ORIENTACIÓN ANATÓMICA FIJA
 //
-// En la imagen de una cabeza de frente, el oído derecho
-// de la persona aparece a la izquierda de la pantalla.
+// NUESTRA IZQUIERDA:
+// OÍDO DERECHO = ROJO
 //
-// OE  = oído estudiado
-// ONE = oído no estudiado
-// ======================================================
+// NUESTRA DERECHA:
+// OÍDO IZQUIERDO = AZUL
+//
+// OE y ONE modifican las etiquetas, nunca la posición.
+// =====================================================
 
-function ladoVisualDelOido(ear) {
-  return ear === "derecho" ? "izquierda" : "derecha";
-}
-
-function inputVA(ear) {
+function obtenerInputVA(ear) {
   return ear === "derecho" ? vaIzquierda : vaDerecha;
 }
 
-function inputVO(ear) {
+function obtenerInputVO(ear) {
   return ear === "derecho" ? voIzquierda : voDerecha;
 }
+
+function aplicarColoresFijos() {
+  // Oído derecho: siempre a nuestra izquierda y rojo.
+  tituloLadoIzquierdo.style.color = "#ed5c69";
+  contenedorVaIzquierda.style.borderTop = "3px solid #ed5c69";
+  labelVaIzquierda.style.color = "#ed5c69";
+  labelVoIzquierda.style.color = "#ed5c69";
+  voIzquierda.style.borderColor = "#ed5c69";
+
+  // Oído izquierdo: siempre a nuestra derecha y azul.
+  tituloLadoDerecho.style.color = "#4f72f5";
+  contenedorVaDerecha.style.borderTop = "3px solid #4f72f5";
+  labelVaDerecha.style.color = "#4f72f5";
+  labelVoDerecha.style.color = "#4f72f5";
+  voDerecha.style.borderColor = "#4f72f5";
+}
+
+// =====================================================
+// OBTENER Y VALIDAR DATOS
+// =====================================================
 
 function obtenerDato(input) {
   const valor = input.value.trim();
@@ -90,93 +112,91 @@ function obtenerDato(input) {
   return numero;
 }
 
-// ======================================================
+function validarDato(input, nombre) {
+  const valor = obtenerDato(input);
+
+  if (valor === null) {
+    throw new Error(
+      `Ingresa un valor válido para ${nombre}, entre -10 y 120 dB HL.`
+    );
+  }
+
+  return valor;
+}
+
+// =====================================================
 // ACTUALIZAR INTERFAZ
-// ======================================================
+// =====================================================
 
 function actualizarInterfaz() {
   const tipoVia = via.value;
-  const oidoEstudiado = oido.value;
-  const oidoNoEstudiado =
-    oidoEstudiado === "derecho" ? "izquierdo" : "derecho";
-
-  const ladoOE = ladoVisualDelOido(oidoEstudiado);
-  const ladoONE = ladoVisualDelOido(oidoNoEstudiado);
-
+  const OE = oido.value;
+  const ONE = OE === "derecho" ? "izquierdo" : "derecho";
   const freq = Number(frecuencia.value);
   const esVO = tipoVia === "VO";
+
   const frecuenciaValidaVO = FRECUENCIAS_VO.includes(freq);
 
-  // Cambiar la imagen central según vía y oído.
-  const claveImagen = `${tipoVia}-${oidoEstudiado}`;
+  // Cambiar la imagen según vía y oído estudiado.
+  const claveImagen = `${tipoVia}-${OE}`;
+
+  imagenOido.onerror = null;
   imagenOido.src = IMAGENES[claveImagen];
+
   imagenOido.alt =
     `Esquema de ${esVO ? "vía ósea" : "vía aérea"}, ` +
-    `oído estudiado ${oidoEstudiado}`;
+    `oído estudiado ${OE}`;
 
   imagenOido.onerror = function () {
     this.onerror = null;
     this.alt =
-      "No se encontró la imagen. Revisa el nombre del archivo en la carpeta img.";
+      "Imagen no encontrada. Comprueba los nombres de los archivos de la carpeta img.";
   };
 
-  $("etiquetaVia").textContent =
-    esVO ? "VÍA ÓSEA" : "VÍA AÉREA";
+  $("etiquetaVia").textContent = esVO ? "VÍA ÓSEA" : "VÍA AÉREA";
 
-  // Identificar los oídos a los lados de la imagen.
+  // IZQUIERDA DE PANTALLA = OÍDO DERECHO.
   tituloLadoIzquierdo.textContent =
-    `${ladoONE === "izquierda" ? "ONE" : "OE"} · Oído ` +
-    (ladoONE === "izquierda" ? "izquierdo" : "derecho");
+    `Oído derecho · ${OE === "derecho" ? "OE" : "ONE"}`;
 
+  // DERECHA DE PANTALLA = OÍDO IZQUIERDO.
   tituloLadoDerecho.textContent =
-    `${ladoONE === "derecha" ? "ONE" : "OE"} · Oído ` +
-    (ladoONE === "derecha" ? "izquierdo" : "derecho");
+    `Oído izquierdo · ${OE === "izquierdo" ? "OE" : "ONE"}`;
 
-  // Las etiquetas de VO permanecen dentro del dibujo.
+  // Las casillas de VO mantienen la orientación anatómica.
   labelVoIzquierda.textContent =
-    ladoVisualDelOido("derecho") === "izquierda"
-      ? (oidoEstudiado === "derecho" ? "VO · OE" : "VO · ONE")
-      : "";
+    `VO · ${OE === "derecho" ? "OE" : "ONE"}`;
 
   labelVoDerecha.textContent =
-    oidoEstudiado === "izquierdo" ? "VO · OE" : "VO · ONE";
+    `VO · ${OE === "izquierdo" ? "OE" : "ONE"}`;
 
-  // Aclarar cuál es el oído representado por cada casilla.
-  labelVoIzquierda.textContent =
-    (ladoOE === "izquierda") ? "VO · OE" : "VO · ONE";
-
-  labelVoDerecha.textContent =
-    (ladoOE === "derecha") ? "VO · OE" : "VO · ONE";
-
-  // Vía aérea: se necesitan VA del OE y del ONE.
-  // Vía ósea: solo se necesita VA del ONE.
-  contenedorVaIzquierda.hidden =
-    esVO && ladoONE !== "izquierda";
-
-  contenedorVaDerecha.hidden =
-    esVO && ladoONE !== "derecha";
-
+  // Las casillas de VA también mantienen la orientación.
   labelVaIzquierda.textContent =
-    ladoOE === "izquierda" ? "VA · OE" : "VA · ONE";
+    `VA · ${OE === "derecho" ? "OE" : "ONE"}`;
 
   labelVaDerecha.textContent =
-    ladoOE === "derecha" ? "VA · OE" : "VA · ONE";
+    `VA · ${OE === "izquierdo" ? "OE" : "ONE"}`;
 
-  // Para VO, el campo VA del oído estudiado no se usa.
-  inputVA(oidoEstudiado).required = !esVO;
-  inputVA(oidoNoEstudiado).required = true;
+  // VÍA AÉREA: mostrar ambas casillas VA.
+  // VÍA ÓSEA: mostrar solo VA del oído no estudiado.
+  contenedorVaIzquierda.hidden =
+    esVO && OE === "derecho";
 
-  // Restringir las frecuencias permitidas para VO.
+  contenedorVaDerecha.hidden =
+    esVO && OE === "izquierdo";
+
+  obtenerInputVA(OE).required = !esVO;
+  obtenerInputVA(ONE).required = true;
+
+  // Frecuencias permitidas en vía ósea.
   Array.from(frecuencia.options).forEach((option) => {
-    const f = Number(option.value);
-
-    option.disabled = esVO && !FRECUENCIAS_VO.includes(f);
+    option.disabled =
+      esVO && !FRECUENCIAS_VO.includes(Number(option.value));
   });
 
   avisoFrecuencia.hidden = !esVO || !frecuenciaValidaVO;
 
-  // La corrección por efecto de oclusión solo se ofrece
-  // en 250, 500 y 1000 Hz cuando se evalúa VO.
+  // Mostrar opción de efecto de oclusión en 250, 500 y 1000 Hz.
   opcionesOclusion.hidden =
     !esVO || !FRECUENCIAS_EFECTO_OCLUSION.includes(freq);
 
@@ -184,12 +204,15 @@ function actualizarInterfaz() {
     neurosensorial.checked = false;
   }
 
+  // Reafirmar los colores independientemente del OE.
+  aplicarColoresFijos();
+
   limpiarResultados();
 }
 
-// ======================================================
-// LIMPIEZA Y VALIDACIÓN
-// ======================================================
+// =====================================================
+// RESULTADOS Y ERRORES
+// =====================================================
 
 function limpiarResultados() {
   resultados.hidden = true;
@@ -203,17 +226,9 @@ function mostrarError(mensaje) {
   mensajeError.hidden = false;
 }
 
-function validarDato(input, nombre) {
-  const valor = obtenerDato(input);
-
-  if (valor === null) {
-    throw new Error(
-      `Ingresa un valor válido para ${nombre} entre -10 y 120 dB HL.`
-    );
-  }
-
-  return valor;
-}
+// =====================================================
+// LEER LOS VALORES DEL OE Y DEL ONE
+// =====================================================
 
 function leerDatos() {
   const OE = oido.value;
@@ -224,25 +239,36 @@ function leerDatos() {
     via: via.value,
     OE,
     ONE,
-    voOE: validarDato(inputVO(OE), `VO del OE (${OE})`),
-    voONE: validarDato(inputVO(ONE), `VO del ONE (${ONE})`),
-    vaONE: validarDato(inputVA(ONE), `VA del ONE (${ONE})`)
+
+    voOE: validarDato(
+      obtenerInputVO(OE),
+      `VO del OE (${OE})`
+    ),
+
+    voONE: validarDato(
+      obtenerInputVO(ONE),
+      `VO del ONE (${ONE})`
+    ),
+
+    vaONE: validarDato(
+      obtenerInputVA(ONE),
+      `VA del ONE (${ONE})`
+    )
   };
 
   if (datos.via === "VA") {
-    datos.vaOE = validarDato(inputVA(OE), `VA del OE (${OE})`);
+    datos.vaOE = validarDato(
+      obtenerInputVA(OE),
+      `VA del OE (${OE})`
+    );
   }
 
   return datos;
 }
 
-// ======================================================
-// FÓRMULAS
-//
-// Se implementan las fórmulas indicadas en tu descripción.
-// Confirma los criterios con el protocolo de tu asignatura
-// antes de utilizar esta herramienta para decisiones clínicas.
-// ======================================================
+// =====================================================
+// CÁLCULOS DE ENMASCARAMIENTO
+// =====================================================
 
 function calcularEnmascaramiento(datos) {
   const {
@@ -254,15 +280,14 @@ function calcularEnmascaramiento(datos) {
     voONE
   } = datos;
 
-  let estimuloVO = voOE;
-  let correccionOclusion = 0;
+  // -----------------------------------------------
+  // VÍA AÉREA
+  // -----------------------------------------------
 
   if (tipoVia === "VA") {
-    // Criterio de VA con atenuación interaural de 40 dB.
-    const nivelAtenuado = vaOE - 40;
-
     const enmascarar =
-      vaOE >= 40 && nivelAtenuado >= voONE;
+      vaOE >= 40 &&
+      vaOE - 40 >= voONE;
 
     if (!enmascarar) {
       return {
@@ -276,23 +301,22 @@ function calcularEnmascaramiento(datos) {
     const minimo = vaOE - 40 - voONE + vaONE;
     const maximo = voOE + 40;
 
-    return crearResultadoEnmascarado(
-      minimo,
-      maximo,
-      "VA",
-      null
-    );
+    return crearResultado(minimo, maximo, "VA");
   }
 
+  // -----------------------------------------------
   // VÍA ÓSEA
+  // -----------------------------------------------
+
   if (!FRECUENCIAS_VO.includes(freq)) {
     throw new Error(
-      "Para evaluar vía ósea, selecciona 250, 500, 1000, " +
-      "2000, 3000 o 4000 Hz."
+      "Para vía ósea, selecciona 250, 500, 1000, 2000, 3000 o 4000 Hz."
     );
   }
 
-  // Aplicar efecto de oclusión solo si se marcó la casilla.
+  let correccionOclusion = 0;
+
+  // Corrección por efecto de oclusión, según selección.
   if (
     neurosensorial.checked &&
     FRECUENCIAS_EFECTO_OCLUSION.includes(freq)
@@ -304,10 +328,9 @@ function calcularEnmascaramiento(datos) {
     }
   }
 
-  estimuloVO = voOE + correccionOclusion;
+  const estimuloVO = voOE + correccionOclusion;
 
-  // Criterio indicado en la descripción: el estímulo de VO
-  // supera la VO del oído no estudiado.
+  // Criterio de VO de la versión anterior.
   const enmascarar = estimuloVO > voONE;
 
   if (!enmascarar) {
@@ -321,36 +344,22 @@ function calcularEnmascaramiento(datos) {
     };
   }
 
-  // Mínimo basado en el estímulo de VO, incluyendo la
-  // corrección por oclusión cuando corresponda.
   const minimo = estimuloVO - voONE + vaONE;
-
-  // Máximo basado en la VO real del OE, sin corrección.
   const maximo = voOE + 40;
 
-  return crearResultadoEnmascarado(
-    minimo,
-    maximo,
-    "VO",
-    {
-      estimuloVO,
-      correccionOclusion
-    }
-  );
+  return crearResultado(minimo, maximo, "VO", {
+    estimuloVO,
+    correccionOclusion
+  });
 }
 
-// ======================================================
-// CONSTRUIR RESULTADO
-// ======================================================
+// =====================================================
+// MÍNIMO, MÁXIMO Y ESPECTRO DE ENMASCARAMIENTO
+// =====================================================
 
-function crearResultadoEnmascarado(minimo, maximo, tipoVia, extra) {
-  // Según las fórmulas descritas:
+function crearResultado(minimo, maximo, tipoVia, extra = {}) {
   const inicioEE = minimo + 10;
   const finEE = maximo - 5;
-
-  // El EE no está disponible si su límite inferior supera
-  // el superior, aunque mínimo y máximo aún se solapen.
-  const eeDisponible = inicioEE <= finEE;
 
   return {
     enmascarar: true,
@@ -358,15 +367,11 @@ function crearResultadoEnmascarado(minimo, maximo, tipoVia, extra) {
     maximo,
     inicioEE,
     finEE,
-    eeDisponible,
+    eeDisponible: inicioEE <= finEE,
     tipoVia,
-    ...(extra || {})
+    ...extra
   };
 }
-
-// ======================================================
-// MOSTRAR RESULTADOS
-// ======================================================
 
 function formatearNumero(numero) {
   return Number.isInteger(numero)
@@ -374,24 +379,30 @@ function formatearNumero(numero) {
     : numero.toFixed(1).replace(".", ",");
 }
 
+// =====================================================
+// MOSTRAR RESULTADOS
+// =====================================================
+
 function mostrarResultados(resultado, datos) {
   resultados.hidden = false;
   datosResultado.hidden = true;
+
   notaResultado.textContent = "";
   detalleResultado.textContent = "";
 
   if (!resultado.enmascarar) {
     estadoEnmascaramiento.className = "estado no";
     estadoEnmascaramiento.textContent = "NO SE ENMASCARA";
+
     detalleResultado.textContent = resultado.motivo;
 
-    // No mostrar mínimo, máximo ni EE cuando no se enmascara.
+    // No mostrar mínimo, máximo ni EE si no se enmascara.
     datosResultado.hidden = true;
 
     if (resultado.correccionOclusion > 0) {
       notaResultado.textContent =
-        `Estímulo VO calculado: ${formatearNumero(resultado.estimuloVO)} dB HL ` +
-        `(incluye ${resultado.correccionOclusion} dB de corrección por oclusión).`;
+        `Estímulo VO calculado: ${formatearNumero(resultado.estimuloVO)} dB HL. ` +
+        `Corrección por oclusión: ${resultado.correccionOclusion} dB.`;
     }
 
     return;
@@ -416,8 +427,7 @@ function mostrarResultados(resultado, datos) {
       `${formatearNumero(resultado.finEE)}`;
 
     notaResultado.textContent =
-      "El EE disponible se calcula desde mínimo + 10 dB " +
-      "hasta máximo − 5 dB, según las reglas indicadas.";
+      "EE calculado desde mínimo + 10 dB hasta máximo − 5 dB.";
   } else {
     resultadoEE.textContent = "No disponible";
 
@@ -435,9 +445,9 @@ function mostrarResultados(resultado, datos) {
   datosResultado.hidden = false;
 }
 
-// ======================================================
-// BOTONES Y EVENTOS
-// ======================================================
+// =====================================================
+// BOTÓN CALCULAR
+// =====================================================
 
 $("calcular").addEventListener("click", () => {
   limpiarResultados();
@@ -461,27 +471,37 @@ $("calcular").addEventListener("click", () => {
   }
 });
 
+// =====================================================
+// BOTÓN LIMPIAR
+// =====================================================
+
 $("limpiar").addEventListener("click", () => {
   document.querySelectorAll('input[type="number"]').forEach((input) => {
     input.value = "";
   });
 
   neurosensorial.checked = false;
+
   limpiarResultados();
 });
 
-// Actualizar imagen, etiquetas y frecuencias al cambiar opciones.
+// =====================================================
+// EVENTOS
+// =====================================================
+
 [frecuencia, via, oido].forEach((elemento) => {
   elemento.addEventListener("change", actualizarInterfaz);
 });
 
-// Si se cambian datos después de calcular, borrar el resultado
-// anterior para no dejar visible un cálculo desactualizado.
-document.querySelectorAll('input[type="number"], input[type="checkbox"]')
+document
+  .querySelectorAll('input[type="number"], input[type="checkbox"]')
   .forEach((input) => {
     input.addEventListener("input", limpiarResultados);
     input.addEventListener("change", limpiarResultados);
   });
 
-// Estado inicial.
+// =====================================================
+// INICIAR CALCULADORA
+// =====================================================
+
 actualizarInterfaz();
