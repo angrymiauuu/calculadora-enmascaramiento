@@ -146,6 +146,11 @@ function actualizarInterfaz() {
   imagenOido.alt =
     `Esquema de ${esVO ? "vía ósea" : "vía aérea"}, ` +
     `oído estudiado ${OE}`;
+
+  imagenOido.onerror = function () {
+    this.onerror = null;
+    this.alt =
+      "Imagen no encontrada. Comprueba los nombres de los archivos de la carpeta img.";
   };
 
   $("etiquetaVia").textContent = esVO ? "VÍA ÓSEA" : "VÍA AÉREA";
